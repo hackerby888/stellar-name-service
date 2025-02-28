@@ -32,10 +32,9 @@ pub struct Registry;
 #[contractimpl]
 impl Registry {
     pub fn __constructor(env: Env, admin: Address) {
-        env.storage().persistent().set(&ADMIN, &admin);
+        env.storage().instance().set(&ADMIN, &admin);
     }
 
-    //check if the domain is available
     pub fn is_name_registered(env: Env, name: String) -> bool {
         env.storage().persistent().has(&name)
     }
@@ -47,11 +46,9 @@ impl Registry {
         resolver: Address,
         number_of_years: u64,
     ) -> bool {
-        //check if the caller is the admin
-        let admin: Address = env.storage().persistent().get(&ADMIN).unwrap();
+        let admin: Address = env.storage().instance().get(&ADMIN).unwrap();
         admin.require_auth();
 
-        //check if the name is already registered
         if Self::is_name_registered(env.clone(), name.clone()) {
             panic_with_error!(&env, Error::NameAlreadyRegistered);
         }

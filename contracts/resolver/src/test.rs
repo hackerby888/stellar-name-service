@@ -13,7 +13,7 @@ fn test_get_resolved_name() {
     );
 
     let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&admin, &registry_id));
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);

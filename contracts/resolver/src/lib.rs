@@ -8,7 +8,6 @@ mod registry {
     super::contractimport!(file = "../../target/wasm32-unknown-unknown/release/registry.wasm");
 }
 
-const ADMIN: Symbol = symbol_short!("admin");
 const REGISTRY: Symbol = symbol_short!("registry");
 
 #[contracterror]
@@ -27,9 +26,8 @@ pub struct Resolver;
 
 #[contractimpl]
 impl Resolver {
-    pub fn __constructor(env: Env, admin: Address, registry: Address) {
-        env.storage().persistent().set(&ADMIN, &admin);
-        env.storage().persistent().set(&REGISTRY, &registry);
+    pub fn __constructor(env: Env, registry: Address) {
+        env.storage().instance().set(&REGISTRY, &registry);
     }
 
     pub fn is_name_has_resolve_data(env: Env, name: String) -> bool {
@@ -37,7 +35,7 @@ impl Resolver {
     }
 
     pub fn set_resolve_data(env: Env, name: String, address: Address) -> bool {
-        let client = registry::Client::new(&env, &env.storage().persistent().get(&REGISTRY).unwrap());
+        let client = registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
 
         let owner = client.get_owner(&name);
         owner.require_auth();
@@ -50,7 +48,7 @@ impl Resolver {
     pub fn resolve_name(env: Env, name: String) -> Address {
         if Self::is_name_has_resolve_data(env.clone(), name.clone()) {
             let client =
-                registry::Client::new(&env, &env.storage().persistent().get(&REGISTRY).unwrap());
+                registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
             if client.is_name_expired(&name) {
                 panic_with_error!(&env, Error::NameExpired);
             }
