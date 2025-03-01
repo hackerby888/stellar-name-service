@@ -9,6 +9,7 @@ mod registry {
 }
 
 const REGISTRY: Symbol = symbol_short!("registry");
+const ASSET_PER_YEAR: u64 = 20;
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -19,6 +20,7 @@ pub enum Error {
     NameInvalid = 3,
     NameExpired = 4,
     NameHasNoResolveData = 5,
+    ResolverAlreadySet = 6,
 }
 
 #[contract]

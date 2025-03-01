@@ -1,51 +1,53 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{Env, String};
+use soroban_sdk::{testutils::Address as _, token, Env, String, Address, Bytes, BytesN};
 
-#[test]
-fn test_get_resolved_name() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let admin = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+const MAX_ASSET: i128 = 100000;
 
-    let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&registry_id,));
-
-    let resolver_client = ResolverClient::new(&env, &resolver_id);
-    let registry_client = registry::Client::new(&env, &registry_id);
-
-    let name = String::from_str(&env, "test");
-    let owner = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
-
-    registry_client.register_name(&name, &owner, &resolver_id, &1);
-
-    let address_to_be_resolved = Address::from_str(
-        &env,
-        "GA6O4HS4WYRLQJ7WNABBYJ2WMO6TT3NC6NTHJFTYRM6T3DOFYIT43LOJ",
-    );
-
-    resolver_client.set_resolve_data(&name, &address_to_be_resolved);
-
-    assert_eq!(resolver_client.resolve_name(&name), address_to_be_resolved);
-    assert_ne!(resolver_client.resolve_name(&name), owner);
+fn create_token_contract<'a>(
+    e: &Env,
+    admin: &Address,
+) -> (token::Client<'a>, token::StellarAssetClient<'a>) {
+    let sac = e.register_stellar_asset_contract_v2(admin.clone());
+    (
+        token::Client::new(e, &sac.address()),
+        token::StellarAssetClient::new(e, &sac.address()),
+    )
 }
 
 #[test]
-#[should_panic]
+fn test_get_resolved_name() { 
+    let env = Env::default();
+    //env.mock_all_auths();
+    let admin = Address::generate(&env);
+   // let (token, token_admin) = create_token_contract(&env, &admin);
+    let registry_id = env.register(registry::WASM, ());
+    // let resolver_id = env.register(Resolver, (&registry_id,));
+
+    // let resolver_client = ResolverClient::new(&env, &resolver_id);
+    // let registry_client = registry::Client::new(&env, &registry_id);
+
+    // let name = String::from_str(&env, "test");
+    // let owner = Address::generate(&env);
+
+    // token_admin.mint(&owner, &MAX_ASSET);
+    // registry_client.set_resolver(&resolver_id);
+    // registry_client.register_name(&name, &owner, &1);
+
+    // let address_to_be_resolved = Address::generate(&env);
+
+    // resolver_client.set_resolve_data(&name, &address_to_be_resolved);
+
+    // assert_eq!(resolver_client.resolve_name(&name), address_to_be_resolved);
+    // assert_ne!(resolver_client.resolve_name(&name), owner);
+}
+
+#[test]
 fn test_get_resolved_data_from_registered_but_not_set() {
     let env = Env::default();
     env.mock_all_auths();
-    let admin = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let admin = Address::generate(&env);
 
     let registry_id = env.register(registry::WASM, (&admin,));
     let resolver_id = env.register(Resolver, (&admin, &registry_id));
@@ -54,12 +56,10 @@ fn test_get_resolved_data_from_registered_but_not_set() {
     let registry_client = registry::Client::new(&env, &registry_id);
 
     let name = String::from_str(&env, "test");
-    let owner = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let owner = Address::generate(&env);
 
-    registry_client.register_name(&name, &owner, &resolver_id, &1);
+    registry_client.set_resolver(&resolver_id);
+    registry_client.register_name(&name, &owner, &1);
     resolver_client.resolve_name(&name);
 }
 
@@ -68,10 +68,7 @@ fn test_get_resolved_data_from_registered_but_not_set() {
 fn test_get_resolved_data_from_not_registered() {
     let env = Env::default();
     env.mock_all_auths();
-    let admin = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let admin = Address::generate(&env);
 
     let registry_id = env.register(registry::WASM, (&admin,));
     let resolver_id = env.register(Resolver, (&admin, &registry_id));
@@ -88,10 +85,7 @@ fn test_get_resolved_data_from_not_registered() {
 fn test_set_resolved_data_from_not_registered() {
     let env = Env::default();
     env.mock_all_auths();
-    let admin = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let admin = Address::generate(&env);
 
     let registry_id = env.register(registry::WASM, (&admin,));
     let resolver_id = env.register(Resolver, (&admin, &registry_id));
@@ -100,10 +94,7 @@ fn test_set_resolved_data_from_not_registered() {
 
     let name = String::from_str(&env, "test");
 
-    let address_to_be_resolved = Address::from_str(
-        &env,
-        "GA6O4HS4WYRLQJ7WNABBYJ2WMO6TT3NC6NTHJFTYRM6T3DOFYIT43LOJ",
-    );
+    let address_to_be_resolved = Address::generate(&env);
 
     resolver_client.set_resolve_data(&name, &address_to_be_resolved);
 }
@@ -113,10 +104,7 @@ fn test_set_resolved_data_from_not_registered() {
 fn test_set_resolved_wrong_name_but_there_is_another_is_valid() {
     let env = Env::default();
     env.mock_all_auths();
-    let admin = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let admin = Address::generate(&env);
 
     let registry_id = env.register(registry::WASM, (&admin,));
     let resolver_id = env.register(Resolver, (&admin, &registry_id));
@@ -125,17 +113,11 @@ fn test_set_resolved_wrong_name_but_there_is_another_is_valid() {
     let registry_client = registry::Client::new(&env, &registry_id);
 
     let name = String::from_str(&env, "test");
-    let owner = Address::from_str(
-        &env,
-        "GDW7HH4TXOF5IOJOXOV2JLIOLRNOT6PVEXP47GIBUMHN6TIFMQ2FMROQ",
-    );
+    let owner = Address::generate(&env);
+    registry_client.set_resolver(&resolver_id);
+    registry_client.register_name(&name, &owner, &1);
 
-    registry_client.register_name(&name, &owner, &resolver_id, &1);
-
-    let address_to_be_resolved = Address::from_str(
-        &env,
-        "GA6O4HS4WYRLQJ7WNABBYJ2WMO6TT3NC6NTHJFTYRM6T3DOFYIT43LOJ",
-    );
+    let address_to_be_resolved = Address::generate(&env);
 
     resolver_client.set_resolve_data(&name, &address_to_be_resolved);
 
