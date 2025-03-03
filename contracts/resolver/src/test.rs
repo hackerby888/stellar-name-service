@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{testutils::Address as _, token, Env, String, Address, Bytes, BytesN};
+use soroban_sdk::{testutils::Address as _, token, vec, Address, Env};
 
 const MAX_ASSET: i128 = 100000;
 
@@ -17,111 +17,138 @@ fn create_token_contract<'a>(
 }
 
 #[test]
-fn test_get_resolved_name() { 
+fn test_get_resolved_name() {
     let env = Env::default();
-    //env.mock_all_auths();
+    env.mock_all_auths();
     let admin = Address::generate(&env);
-   // let (token, token_admin) = create_token_contract(&env, &admin);
-    let registry_id = env.register(registry::WASM, ());
-    // let resolver_id = env.register(Resolver, (&registry_id,));
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let registry_id = env.register(
+        registry::WASM,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
-    // let resolver_client = ResolverClient::new(&env, &resolver_id);
-    // let registry_client = registry::Client::new(&env, &registry_id);
+    let resolver_client = ResolverClient::new(&env, &resolver_id);
+    let registry_client = registry::Client::new(&env, &registry_id);
 
-    // let name = String::from_str(&env, "test");
-    // let owner = Address::generate(&env);
+    let name = Bytes::from_slice(&env, "test".as_bytes());
+    let owner = Address::generate(&env);
 
-    // token_admin.mint(&owner, &MAX_ASSET);
-    // registry_client.set_resolver(&resolver_id);
-    // registry_client.register_name(&name, &owner, &1);
+    token_admin.mint(&owner, &MAX_ASSET);
+    registry_client.set_resolver(&resolver_id);
+    registry_client.register_name(&name, &com_tld, &owner, &1);
 
-    // let address_to_be_resolved = Address::generate(&env);
+    let address_to_be_resolved = Address::generate(&env);
 
-    // resolver_client.set_resolve_data(&name, &address_to_be_resolved);
+    resolver_client.set_resolve_data(&name, &com_tld, &address_to_be_resolved);
 
-    // assert_eq!(resolver_client.resolve_name(&name), address_to_be_resolved);
-    // assert_ne!(resolver_client.resolve_name(&name), owner);
+    assert_eq!(
+        resolver_client.resolve_name(&name, &com_tld),
+        address_to_be_resolved
+    );
+    assert_ne!(resolver_client.resolve_name(&name, &com_tld), owner);
 }
 
 #[test]
+#[should_panic(expected = "Error(Contract, #5)")]
 fn test_get_resolved_data_from_registered_but_not_set() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
-
-    let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&admin, &registry_id));
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let registry_id = env.register(
+        registry::WASM,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);
 
-    let name = String::from_str(&env, "test");
+    let name = Bytes::from_slice(&env, "test".as_bytes());
     let owner = Address::generate(&env);
 
+    token_admin.mint(&owner, &MAX_ASSET);
     registry_client.set_resolver(&resolver_id);
-    registry_client.register_name(&name, &owner, &1);
-    resolver_client.resolve_name(&name);
+    registry_client.register_name(&name, &com_tld, &owner, &1);
+    resolver_client.resolve_name(&name, &com_tld);
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "Error(Contract, #5)")]
 fn test_get_resolved_data_from_not_registered() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
-
-    let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&admin, &registry_id));
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let registry_id = env.register(
+        registry::WASM,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
 
-    let name = String::from_str(&env, "test");
+    let name = Bytes::from_slice(&env, "test".as_bytes());
 
-    resolver_client.resolve_name(&name);
+    resolver_client.resolve_name(&name, &com_tld);
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "Error(Contract, #2)")]
 fn test_set_resolved_data_from_not_registered() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
-
-    let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&admin, &registry_id));
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let registry_id = env.register(
+        registry::WASM,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
 
-    let name = String::from_str(&env, "test");
+    let name = Bytes::from_slice(&env, "test".as_bytes());
 
     let address_to_be_resolved = Address::generate(&env);
 
-    resolver_client.set_resolve_data(&name, &address_to_be_resolved);
+    resolver_client.set_resolve_data(&name, &com_tld, &address_to_be_resolved);
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "Error(Contract, #5)")]
 fn test_set_resolved_wrong_name_but_there_is_another_is_valid() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
-
-    let registry_id = env.register(registry::WASM, (&admin,));
-    let resolver_id = env.register(Resolver, (&admin, &registry_id));
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let registry_id = env.register(
+        registry::WASM,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let resolver_id = env.register(Resolver, (&registry_id,));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);
 
-    let name = String::from_str(&env, "test");
+    let name = Bytes::from_slice(&env, "test".as_bytes());
     let owner = Address::generate(&env);
+
+    token_admin.mint(&owner, &MAX_ASSET);
     registry_client.set_resolver(&resolver_id);
-    registry_client.register_name(&name, &owner, &1);
+    registry_client.register_name(&name, &com_tld, &owner, &1);
 
     let address_to_be_resolved = Address::generate(&env);
 
-    resolver_client.set_resolve_data(&name, &address_to_be_resolved);
+    resolver_client.set_resolve_data(&name, &com_tld, &address_to_be_resolved);
 
-    let name2 = String::from_str(&env, "test2");
+    let name2 = Bytes::from_slice(&env, "test2".as_bytes());
 
-    resolver_client.resolve_name(&name2);
+    resolver_client.resolve_name(&name2, &com_tld);
 }
