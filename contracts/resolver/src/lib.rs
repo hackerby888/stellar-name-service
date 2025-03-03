@@ -12,13 +12,20 @@ mod registry {
 
 const REGISTRY: Symbol = symbol_short!("registry");
 
-pub trait TimeToLive {
+pub trait Base {
     fn extend_me(&self);
+    fn delete_name(&self, name: &Bytes, tld: &Bytes);
 }
 
-impl TimeToLive for Env {
+impl Base for Env {
     fn extend_me(&self) {
         self.storage().instance().extend_ttl(17280, 17280 * 30);
+    }
+
+    fn delete_name(&self, name: &Bytes, tld: &Bytes) {
+        self.storage()
+            .instance()
+            .remove(&DataKey::Name(name.clone(), tld.clone()));
     }
 }
 
@@ -47,7 +54,10 @@ impl Resolver {
     pub fn set_resolve_data(env: Env, name: Bytes, tld: Bytes, address: Address) -> bool {
         env.extend_me();
         let client = registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
-
+        if client.is_name_expired(&name, &tld) {
+            env.delete_name(&name, &tld);
+            panic_with_error!(&env, Error::NameExpired);
+        }
         let owner = client.get_owner(&name, &tld);
         owner.require_auth();
 
@@ -64,6 +74,7 @@ impl Resolver {
             let client =
                 registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
             if client.is_name_expired(&name, &tld) {
+                env.delete_name(&name, &tld);
                 panic_with_error!(&env, Error::NameExpired);
             }
             return env

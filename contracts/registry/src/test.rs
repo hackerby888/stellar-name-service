@@ -244,5 +244,7 @@ fn test_name_should_be_expired() {
 
     env.ledger().set_timestamp(1000000000000000);
 
+    assert_eq!(client.is_name_registered(&name, &com_tld), true);
     assert_eq!(client.is_name_expired(&name, &com_tld), true);
+    assert_eq!(client.is_name_registered(&name, &com_tld), false);
 }

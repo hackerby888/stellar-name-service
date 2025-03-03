@@ -14,13 +14,20 @@ const ASSET: Symbol = symbol_short!("asset");
 const TLDS: Symbol = symbol_short!("tlds");
 const ASSET_AMOUNT_PER_YEAR: u64 = 20;
 
-pub trait TimeToLive {
+pub trait Base {
     fn extend_me(&self);
+    fn delete_name(&self, name: &Bytes, tld: &Bytes);
 }
 
-impl TimeToLive for Env {
+impl Base for Env {
     fn extend_me(&self) {
         self.storage().instance().extend_ttl(17280, 17280 * 30);
+    }
+
+    fn delete_name(&self, name: &Bytes, tld: &Bytes) {
+        self.storage()
+            .instance()
+            .remove(&DataKey::Name(name.clone(), tld.clone()));
     }
 }
 
@@ -49,6 +56,23 @@ impl Registry {
         env.storage().instance().set(&TLDS, &tlds);
     }
 
+    pub fn is_name_expired(env: Env, name: Bytes, tld: Bytes) -> bool {
+        env.extend_me();
+        if !Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
+            panic_with_error!(&env, Error::NameNotRegistered);
+        }
+        let domain: Domain = env
+            .storage()
+            .instance()
+            .get(&DataKey::Name(name.clone(), tld.clone()))
+            .unwrap();
+        if domain.expiry < env.ledger().timestamp() {
+            env.delete_name(&name, &tld);
+            return true;
+        }
+        return false;
+    }
+
     pub fn is_name_registered(env: Env, name: Bytes, tld: Bytes) -> bool {
         env.extend_me();
         env.storage()
@@ -60,6 +84,9 @@ impl Registry {
         env.extend_me();
         if !Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
             panic_with_error!(&env, Error::NameNotRegistered);
+        }
+        if Self::is_name_expired(env.clone(), name.clone(), tld.clone()) {
+            panic_with_error!(&env, Error::NameExpired);
         }
         env.storage()
             .instance()
@@ -76,13 +103,20 @@ impl Registry {
         }
     }
 
+    pub fn get_resolver(env: Env) -> Address {
+        env.extend_me();
+        env.storage().instance().get(&RESOLVER).unwrap()
+    }
+
     pub fn register_name(env: Env, name: Bytes, tld: Bytes, owner: Address, number_of_years: u64) {
         env.extend_me();
         owner.require_auth();
         validate_name(&env, &name);
         validate_tld(&env, &tld);
         if Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
-            panic_with_error!(&env, Error::NameAlreadyRegistered);
+            if !Self::is_name_expired(env.clone(), name.clone(), tld.clone()) {
+                panic_with_error!(&env, Error::NameAlreadyRegistered);
+            }
         }
         token::Client::new(&env, &env.storage().instance().get(&ASSET).unwrap()).transfer(
             &owner,
@@ -99,41 +133,21 @@ impl Registry {
             .set(&DataKey::Name(name.clone(), tld.clone()), &domain);
     }
 
-    pub fn get_resolver(env: Env) -> Address {
-        env.extend_me();
-        env.storage().instance().get(&RESOLVER).unwrap()
-    }
-
     pub fn get_owner(env: Env, name: Bytes, tld: Bytes) -> Address {
         env.extend_me();
         let domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
-        if Self::is_name_expired(env.clone(), name.clone(), tld.clone()) {
-            panic_with_error!(&env, Error::NameExpired);
-        }
         return domain.owner;
     }
 
     pub fn transfer(env: Env, name: Bytes, tld: Bytes, new_owner: Address) {
         env.extend_me();
         let mut domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
-        if Self::is_name_expired(env.clone(), name.clone(), tld.clone()) {
-            panic_with_error!(&env, Error::NameExpired);
-        }
 
         domain.owner.require_auth();
         domain.owner = new_owner;
         env.storage()
             .instance()
             .set(&DataKey::Name(name.clone(), tld.clone()), &domain);
-    }
-
-    pub fn is_name_expired(env: Env, name: Bytes, tld: Bytes) -> bool {
-        env.extend_me();
-        let domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
-        if domain.expiry < env.ledger().timestamp() {
-            return true;
-        }
-        return false;
     }
 }
 
