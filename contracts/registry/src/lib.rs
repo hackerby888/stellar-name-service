@@ -8,7 +8,7 @@ use soroban_sdk::{
     Env, Symbol, Vec,
 };
 
-const ONE_YEAR: u64 = 365 * 24 * 60 * 60;
+const ONE_YEAR_IN_SECONDS: u64 = 365 * 24 * 60 * 60;
 const RESOLVER: Symbol = symbol_short!("resolver");
 const ASSET: Symbol = symbol_short!("asset");
 const TLDS: Symbol = symbol_short!("tlds");
@@ -67,7 +67,6 @@ impl Registry {
             .get(&DataKey::Name(name.clone(), tld.clone()))
             .unwrap();
         if domain.expiry < env.ledger().timestamp() {
-            env.delete_name(&name, &tld);
             return true;
         }
         return false;
@@ -126,7 +125,7 @@ impl Registry {
         let domain = Domain {
             owner,
             resolver: env.storage().instance().get(&RESOLVER).unwrap(),
-            expiry: env.ledger().timestamp() + (number_of_years * ONE_YEAR),
+            expiry: env.ledger().timestamp() + (number_of_years * ONE_YEAR_IN_SECONDS),
         };
         env.storage()
             .instance()

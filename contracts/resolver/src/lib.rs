@@ -51,11 +51,10 @@ impl Resolver {
             .has(&DataKey::Name(name.clone(), tld.clone()))
     }
 
-    pub fn set_resolve_data(env: Env, name: Bytes, tld: Bytes, address: Address) -> bool {
+    pub fn set_resolve_data(env: Env, name: Bytes, tld: Bytes, address: Address) {
         env.extend_me();
         let client = registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
         if client.is_name_expired(&name, &tld) {
-            env.delete_name(&name, &tld);
             panic_with_error!(&env, Error::NameExpired);
         }
         let owner = client.get_owner(&name, &tld);
@@ -64,8 +63,6 @@ impl Resolver {
         env.storage()
             .instance()
             .set(&DataKey::Name(name.clone(), tld.clone()), &address);
-
-        true
     }
 
     pub fn resolve_name(env: Env, name: Bytes, tld: Bytes) -> Address {
@@ -74,7 +71,6 @@ impl Resolver {
             let client =
                 registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
             if client.is_name_expired(&name, &tld) {
-                env.delete_name(&name, &tld);
                 panic_with_error!(&env, Error::NameExpired);
             }
             return env

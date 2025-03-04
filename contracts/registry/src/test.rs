@@ -246,5 +246,4 @@ fn test_name_should_be_expired() {
 
     assert_eq!(client.is_name_registered(&name, &com_tld), true);
     assert_eq!(client.is_name_expired(&name, &com_tld), true);
-    assert_eq!(client.is_name_registered(&name, &com_tld), false);
 }
