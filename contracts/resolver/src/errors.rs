@@ -11,4 +11,5 @@ pub enum Error {
     NameHasNoResolveData = 5,
     ResolverAlreadySet = 6,
     TLDNotSupported = 7,
+    NoOffer = 8,
 }
