@@ -1,5 +1,7 @@
 #![no_std]
 mod errors;
+mod utils;
+use crate::utils::*;
 use crate::errors::*;
 use soroban_sdk::{
     contract, contractimpl, contractimport, contracttype, panic_with_error, symbol_short, Address,
@@ -53,6 +55,7 @@ impl Resolver {
 
     pub fn set_resolve_data(env: Env, name: Bytes, tld: Bytes, address: Address) {
         env.extend_me();
+        name.validate_name(&env, true);
         let client = registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
         if client.is_name_expired(&name, &tld) {
             panic_with_error!(&env, Error::NameExpired);

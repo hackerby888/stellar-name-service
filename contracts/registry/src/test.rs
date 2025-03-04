@@ -61,6 +61,39 @@ fn test_basic_funtional() {
 }
 
 #[test]
+fn test_check_sub_domain() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let contract_id = env.register(
+        Registry,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let client = RegistryClient::new(&env, &contract_id);
+
+    let name = Bytes::from_slice(&env, "ttt".as_bytes());
+    let owner = Address::generate(&env);
+    let resolver = Address::generate(&env);
+
+    token_admin.mint(&owner, &MAX_ASSET_AMOUNT);
+    client.set_resolver(&resolver);
+
+    let is_registered = client.is_name_registered(&name, &com_tld);
+    assert_eq!(is_registered, false);
+
+    client.register_name(&name, &com_tld, &owner, &1);
+
+    let sub_name = Bytes::from_slice(&env, "me.ttt".as_bytes());
+
+    assert_eq!(client.is_name_registered(&sub_name, &com_tld), true);
+    assert_eq!(client.get_owner(&sub_name, &com_tld), owner);
+    assert_eq!(client.is_name_expired(&sub_name, &com_tld), false);
+}
+
+
+#[test]
 #[should_panic(expected = "Error(Contract, #3)")]
 fn test_name_invalid_because_uppercase() {
     let env = Env::default();

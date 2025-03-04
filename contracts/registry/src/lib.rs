@@ -58,6 +58,7 @@ impl Registry {
 
     pub fn is_name_expired(env: Env, name: Bytes, tld: Bytes) -> bool {
         env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
         if !Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
             panic_with_error!(&env, Error::NameNotRegistered);
         }
@@ -74,6 +75,7 @@ impl Registry {
 
     pub fn is_name_registered(env: Env, name: Bytes, tld: Bytes) -> bool {
         env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
         env.storage()
             .instance()
             .has(&DataKey::Name(name.clone(), tld.clone()))
@@ -81,6 +83,7 @@ impl Registry {
 
     pub fn get_name(env: Env, name: Bytes, tld: Bytes) -> Domain {
         env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
         if !Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
             panic_with_error!(&env, Error::NameNotRegistered);
         }
@@ -110,8 +113,8 @@ impl Registry {
     pub fn register_name(env: Env, name: Bytes, tld: Bytes, owner: Address, number_of_years: u64) {
         env.extend_me();
         owner.require_auth();
-        validate_name(&env, &name);
-        validate_tld(&env, &tld);
+        name.validate_name(&env, false);
+        tld.validate_tld(&env);
         if Self::is_name_registered(env.clone(), name.clone(), tld.clone()) {
             if !Self::is_name_expired(env.clone(), name.clone(), tld.clone()) {
                 panic_with_error!(&env, Error::NameAlreadyRegistered);
@@ -122,7 +125,7 @@ impl Registry {
             &env.current_contract_address(),
             &(number_of_years * ASSET_AMOUNT_PER_YEAR).into(),
         );
-        let domain = Domain {
+        let domain: Domain = Domain {
             owner,
             resolver: env.storage().instance().get(&RESOLVER).unwrap(),
             expiry: env.ledger().timestamp() + (number_of_years * ONE_YEAR_IN_SECONDS),
@@ -134,12 +137,14 @@ impl Registry {
 
     pub fn get_owner(env: Env, name: Bytes, tld: Bytes) -> Address {
         env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
         let domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
         return domain.owner;
     }
 
     pub fn transfer(env: Env, name: Bytes, tld: Bytes, new_owner: Address) {
         env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
         let mut domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
 
         domain.owner.require_auth();

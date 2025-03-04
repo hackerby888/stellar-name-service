@@ -177,9 +177,11 @@ fn test_name_expired() {
     registry_client.set_resolver(&resolver_id);
     registry_client.register_name(&name, &com_tld, &owner, &1);
     let address_to_be_resolved = Address::generate(&env);
-    resolver_client.set_resolve_data(&name, &com_tld, &address_to_be_resolved);
 
-    assert_eq!(resolver_client.is_name_has_resolve_data(&name, &com_tld), true);
+    let name_sub = Bytes::from_slice(&env, "feiyu.test".as_bytes());
+    resolver_client.set_resolve_data(&name_sub, &com_tld, &address_to_be_resolved);
+    
+    assert_eq!(resolver_client.is_name_has_resolve_data(&name_sub, &com_tld), true);
     env.ledger().set_timestamp(1000000000000000);
-    resolver_client.resolve_name(&name, &com_tld);
+    resolver_client.resolve_name(&name_sub, &com_tld);
 }
