@@ -162,6 +162,10 @@ impl Registry {
             &offer.price.into(),
         );
         Self::transfer(env.clone(), name.clone(), tld.clone(), buyer);
+
+        env.storage()
+            .instance()
+            .remove(&DataKey::Offer(name.clone(), tld.clone()));
     }
 }
 
