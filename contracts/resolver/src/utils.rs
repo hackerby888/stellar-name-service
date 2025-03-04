@@ -1,4 +1,4 @@
-use crate::errors::Error;
+use crate::{errors::Error, registry::DataKey};
 use soroban_sdk::{panic_with_error, Bytes, Env};
 
 const DOT_IN_BYTE: u8 = 46;
@@ -48,5 +48,22 @@ impl BytesValidator for Bytes {
                 }
             }
         }
+    }
+}
+
+pub trait Base {
+    fn extend_me(&self);
+    fn delete_name(&self, name: &Bytes, tld: &Bytes);
+}
+
+impl Base for Env {
+    fn extend_me(&self) {
+        self.storage().instance().extend_ttl(17280, 17280 * 30);
+    }
+
+    fn delete_name(&self, name: &Bytes, tld: &Bytes) {
+        self.storage()
+            .instance()
+            .remove(&DataKey::Name(name.clone(), tld.clone()));
     }
 }

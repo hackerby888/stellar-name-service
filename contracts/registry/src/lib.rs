@@ -1,49 +1,19 @@
 #![no_std]
 mod errors;
+mod types;
 mod utils;
 use crate::errors::*;
 use crate::utils::*;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, panic_with_error, symbol_short, token, Address, Bytes,
-    Env, Symbol, Vec,
+    contract, contractimpl, panic_with_error, symbol_short, token, Address, Bytes, Env, Symbol, Vec,
 };
+use types::*;
 
 const ONE_YEAR_IN_SECONDS: u64 = 365 * 24 * 60 * 60;
 const RESOLVER: Symbol = symbol_short!("resolver");
 const ASSET: Symbol = symbol_short!("asset");
 const TLDS: Symbol = symbol_short!("tlds");
 const ASSET_AMOUNT_PER_YEAR: u64 = 20;
-
-pub trait Base {
-    fn extend_me(&self);
-    fn delete_name(&self, name: &Bytes, tld: &Bytes);
-}
-
-impl Base for Env {
-    fn extend_me(&self) {
-        self.storage().instance().extend_ttl(17280, 17280 * 30);
-    }
-
-    fn delete_name(&self, name: &Bytes, tld: &Bytes) {
-        self.storage()
-            .instance()
-            .remove(&DataKey::Name(name.clone(), tld.clone()));
-    }
-}
-
-#[contracttype]
-pub enum DataKey {
-    // domain.tld
-    Name(Bytes, Bytes),
-}
-
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Domain {
-    pub owner: Address,
-    pub resolver: Address,
-    pub expiry: u64,
-}
 
 #[contract]
 pub struct Registry;

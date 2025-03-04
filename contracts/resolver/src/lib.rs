@@ -1,40 +1,20 @@
 #![no_std]
 mod errors;
+mod types;
 mod utils;
-use crate::utils::*;
 use crate::errors::*;
+use crate::utils::*;
 use soroban_sdk::{
-    contract, contractimpl, contractimport, contracttype, panic_with_error, symbol_short, Address,
-    Bytes, Env, Symbol,
+    contract, contractimpl, contractimport, panic_with_error, symbol_short, Address, Bytes, Env,
+    Symbol,
 };
+use types::*;
 
 mod registry {
     super::contractimport!(file = "../../target/wasm32-unknown-unknown/release/registry.wasm");
 }
 
 const REGISTRY: Symbol = symbol_short!("registry");
-
-pub trait Base {
-    fn extend_me(&self);
-    fn delete_name(&self, name: &Bytes, tld: &Bytes);
-}
-
-impl Base for Env {
-    fn extend_me(&self) {
-        self.storage().instance().extend_ttl(17280, 17280 * 30);
-    }
-
-    fn delete_name(&self, name: &Bytes, tld: &Bytes) {
-        self.storage()
-            .instance()
-            .remove(&DataKey::Name(name.clone(), tld.clone()));
-    }
-}
-
-#[contracttype]
-pub enum DataKey {
-    Name(Bytes, Bytes),
-}
 
 #[contract]
 pub struct Resolver;
