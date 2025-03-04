@@ -4,6 +4,7 @@ mod types;
 mod utils;
 use crate::errors::*;
 use crate::utils::*;
+use soroban_sdk::FromVal;
 use soroban_sdk::{
     contract, contractimpl, panic_with_error, symbol_short, token, Address, Bytes, Env, Symbol, Vec,
 };
@@ -130,7 +131,7 @@ impl Registry {
         let domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
         domain.owner.require_auth();
         let offer: Offer = Offer {
-            seller: domain.owner,
+            seller: domain.owner.clone(),
             name: name.clone(),
             tld: tld.clone(),
             price,
@@ -138,6 +139,20 @@ impl Registry {
         env.storage()
             .instance()
             .set(&DataKey::Offer(name.clone(), tld.clone()), &offer);
+
+        env.events().publish((Symbol::new(&env, "make_sell_offer"),), (domain.owner, name, tld, price));
+    }
+
+    pub fn cancel_sell_offer(env: Env, name: Bytes, tld: Bytes) {
+        env.extend_me();
+        let name: Bytes = name.get_root_name(&env);
+        let offer: Offer = Self::get_sell_offer(env.clone(), name.clone(), tld.clone());
+        offer.seller.require_auth();
+        env.storage()
+            .instance()
+            .remove(&DataKey::Offer(name.clone(), tld.clone()));
+
+        env.events().publish((Symbol::new(&env, "cancel_sell_offer"),), (offer.seller, name, tld));
     }
 
     pub fn get_sell_offer(env: Env, name: Bytes, tld: Bytes) -> Offer {
@@ -161,12 +176,13 @@ impl Registry {
             &offer.seller,
             &offer.price.into(),
         );
-        Self::transfer(env.clone(), name.clone(), tld.clone(), buyer);
+        Self::transfer(env.clone(), name.clone(), tld.clone(), buyer.clone());
 
         env.storage()
             .instance()
             .remove(&DataKey::Offer(name.clone(), tld.clone()));
+
+        env.events().publish((Symbol::new(&env, "buy_name"),), (buyer, name, tld, offer.price));
     }
 }
-
 mod test;

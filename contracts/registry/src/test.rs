@@ -96,6 +96,39 @@ fn test_make_sell_offer() {
     assert_eq!(token.balance(&owner), i128::from(MAX_ASSET_AMOUNT - 10));
 }
 
+
+#[test]
+#[should_panic(expected = "Error(Contract, #8)")]
+fn test_cancel_sell_offer() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let (token, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let contract_id = env.register(
+        Registry,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let client = RegistryClient::new(&env, &contract_id);
+
+    let name = Bytes::from_slice(&env, "ttt".as_bytes());
+    let owner = Address::generate(&env);
+    let resolver = Address::generate(&env);
+
+    token_admin.mint(&owner, &MAX_ASSET_AMOUNT);
+    client.set_resolver(&resolver);
+
+    client.register_name(&name, &com_tld, &owner, &1);
+
+    client.make_sell_offer(&name, &com_tld, &10);
+
+    client.cancel_sell_offer(&name, &com_tld);
+
+    client.get_sell_offer(&name, &com_tld);
+   
+}
+
+
 #[test]
 fn test_check_sub_domain() {
     let env = Env::default();
