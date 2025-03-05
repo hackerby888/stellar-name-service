@@ -27,7 +27,7 @@ fn test_get_resolved_name() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);
@@ -62,7 +62,7 @@ fn test_get_resolved_data_from_registered_but_not_set() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);
@@ -88,7 +88,7 @@ fn test_get_resolved_data_from_not_registered() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
 
@@ -109,7 +109,7 @@ fn test_set_resolved_data_from_not_registered() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
 
@@ -132,7 +132,7 @@ fn test_set_resolved_wrong_name_but_there_is_another_is_valid() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);
@@ -165,7 +165,7 @@ fn test_name_expired() {
         registry::WASM,
         (&token_admin.address, vec![&env, com_tld.clone()]),
     );
-    let resolver_id = env.register(Resolver, (&registry_id,));
+    let resolver_id = env.register(Resolver, (&admin, &registry_id));
 
     let resolver_client = ResolverClient::new(&env, &resolver_id);
     let registry_client = registry::Client::new(&env, &registry_id);

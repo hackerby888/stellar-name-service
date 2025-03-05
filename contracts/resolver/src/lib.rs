@@ -4,6 +4,7 @@ mod types;
 mod utils;
 use crate::errors::*;
 use crate::utils::*;
+use soroban_sdk::BytesN;
 use soroban_sdk::{
     contract, contractimpl, contractimport, panic_with_error, symbol_short, Address, Bytes, Env,
     Symbol,
@@ -15,14 +16,16 @@ mod registry {
 }
 
 const REGISTRY: Symbol = symbol_short!("registry");
+const ADMIN: Symbol = symbol_short!("admin");
 
 #[contract]
 pub struct Resolver;
 
 #[contractimpl]
 impl Resolver {
-    pub fn __constructor(env: Env, registry: Address) {
+    pub fn __constructor(env: Env, admin: Address, registry: Address) {
         env.extend_me();
+        env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&REGISTRY, &registry);
     }
 
@@ -64,6 +67,13 @@ impl Resolver {
         } else {
             panic_with_error!(&env, Error::NameHasNoResolveData);
         }
+    }
+
+    pub fn upgrade(e: Env, new_wasm_hash: BytesN<32>) {
+        let admin: Address = e.storage().instance().get(&ADMIN).unwrap();
+        admin.require_auth();
+
+        e.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 
