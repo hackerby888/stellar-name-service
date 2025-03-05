@@ -406,3 +406,29 @@ fn test_name_should_be_expired() {
     assert_eq!(client.is_name_registered(&name, &com_tld), true);
     assert_eq!(client.is_name_expired(&name, &com_tld), true);
 }
+
+#[test]
+fn test_register_name_that_expired() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let (_, token_admin) = create_token_contract(&env, &admin);
+    let com_tld = Bytes::from_slice(&env, "com".as_bytes());
+    let contract_id = env.register(
+        Registry,
+        (&token_admin.address, vec![&env, com_tld.clone()]),
+    );
+    let client = RegistryClient::new(&env, &contract_id);
+
+    let name = Bytes::from_slice(&env, "test".as_bytes());
+    let owner = Address::generate(&env);
+    let resolver = Address::generate(&env);
+    client.set_resolver(&resolver);
+
+    token_admin.mint(&owner, &MAX_ASSET_AMOUNT);
+    client.register_name(&name, &com_tld, &owner, &1);
+
+    env.ledger().set_timestamp(1000000000000000);
+
+    client.register_name(&name, &com_tld, &owner, &1);
+}
