@@ -2,10 +2,9 @@
 
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger},
-    vec, Env,
+    testutils::{Address as _, Events, Ledger},
+    token, vec, Address, Bytes, Env, IntoVal, Val,
 };
-
 const MAX_ASSET_AMOUNT: i128 = 100000;
 
 fn create_token_contract<'a>(
@@ -17,6 +16,20 @@ fn create_token_contract<'a>(
         token::Client::new(e, &sac.address()),
         token::StellarAssetClient::new(e, &sac.address()),
     )
+}
+
+fn get_events_by_contract_id<'a>(
+    e: &'a Env,
+    contract_id: &Address,
+) -> Vec<(Address, Vec<Val>, Val)> {
+    let all_events: Vec<(Address, Vec<Val>, Val)> = e.events().all();
+    let mut contract_events: Vec<(Address, Vec<Val>, Val)> = vec![&e];
+    for event in all_events.iter() {
+        if event.0 == contract_id.clone() {
+            contract_events.push_back(event.clone());
+        }
+    }
+    contract_events
 }
 
 #[test]
@@ -43,6 +56,18 @@ fn test_basic_funtional() {
     assert_eq!(is_registered, false);
 
     client.register_name(&name, &com_tld, &owner, &1);
+
+    assert_eq!(
+        get_events_by_contract_id(&env, &contract_id),
+        vec![
+            &env,
+            (
+                contract_id.clone(),
+                (Symbol::new(&env, "register_name"),).into_val(&env),
+                (owner.clone(), name.clone(), com_tld.clone(), 1u64).into_val(&env)
+            )
+        ]
+    );
 
     let is_registered = client.is_name_registered(&name, &com_tld);
     assert_eq!(is_registered, true);
@@ -84,6 +109,18 @@ fn test_make_sell_offer() {
 
     client.make_sell_offer(&name, &com_tld, &10);
 
+    assert_eq!(
+        get_events_by_contract_id(&env, &contract_id),
+        vec![
+            &env,
+            (
+                contract_id.clone(),
+                (Symbol::new(&env, "make_sell_offer"),).into_val(&env),
+                (owner.clone(), name.clone(), com_tld.clone(), 10u64).into_val(&env),
+            )
+        ]
+    );
+
     let offer: Offer = client.get_sell_offer(&name, &com_tld);
     assert_eq!(offer.seller, owner);
 
@@ -92,10 +129,21 @@ fn test_make_sell_offer() {
 
     client.buy_name(&name, &com_tld, &buyer);
 
+    assert_eq!(
+        get_events_by_contract_id(&env, &contract_id),
+        vec![
+            &env,
+            (
+                contract_id.clone(),
+                (Symbol::new(&env, "buy_name"),).into_val(&env),
+                (buyer.clone(), name.clone(), com_tld.clone(), 10u64).into_val(&env),
+            )
+        ]
+    );
+
     assert_eq!(client.get_owner(&name, &com_tld), buyer);
     assert_eq!(token.balance(&owner), i128::from(MAX_ASSET_AMOUNT - 10));
 }
-
 
 #[test]
 #[should_panic(expected = "Error(Contract, #8)")]
@@ -103,7 +151,7 @@ fn test_cancel_sell_offer() {
     let env = Env::default();
     env.mock_all_auths();
     let admin = Address::generate(&env);
-    let (token, token_admin) = create_token_contract(&env, &admin);
+    let (_, token_admin) = create_token_contract(&env, &admin);
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
@@ -124,10 +172,20 @@ fn test_cancel_sell_offer() {
 
     client.cancel_sell_offer(&name, &com_tld);
 
-    client.get_sell_offer(&name, &com_tld);
-   
-}
+    assert_eq!(
+        get_events_by_contract_id(&env, &contract_id),
+        vec![
+            &env,
+            (
+                contract_id.clone(),
+                (Symbol::new(&env, "cancel_sell_offer"),).into_val(&env),
+                (owner.clone(), name.clone(), com_tld.clone()).into_val(&env),
+            )
+        ]
+    );
 
+    client.get_sell_offer(&name, &com_tld);
+}
 
 #[test]
 fn test_check_sub_domain() {
