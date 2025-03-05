@@ -43,13 +43,18 @@ impl Registry {
             &(number_of_years * ASSET_AMOUNT_PER_YEAR).into(),
         );
         let domain: Domain = Domain {
-            owner,
+            owner: owner.clone(),
             resolver: env.storage().instance().get(&RESOLVER).unwrap(),
             expiry: env.ledger().timestamp() + (number_of_years * ONE_YEAR_IN_SECONDS),
         };
         env.storage()
             .instance()
             .set(&DataKey::Name(name.clone(), tld.clone()), &domain);
+
+        env.events().publish(
+            (Symbol::new(&env, "register_name"),),
+            (owner, name, tld, number_of_years),
+        );
     }
 
     pub fn is_name_expired(env: Env, name: Bytes, tld: Bytes) -> bool {
@@ -140,7 +145,10 @@ impl Registry {
             .instance()
             .set(&DataKey::Offer(name.clone(), tld.clone()), &offer);
 
-        env.events().publish((Symbol::new(&env, "make_sell_offer"),), (domain.owner, name, tld, price));
+        env.events().publish(
+            (Symbol::new(&env, "make_sell_offer"),),
+            (domain.owner, name, tld, price),
+        );
     }
 
     pub fn cancel_sell_offer(env: Env, name: Bytes, tld: Bytes) {
@@ -152,7 +160,10 @@ impl Registry {
             .instance()
             .remove(&DataKey::Offer(name.clone(), tld.clone()));
 
-        env.events().publish((Symbol::new(&env, "cancel_sell_offer"),), (offer.seller, name, tld));
+        env.events().publish(
+            (Symbol::new(&env, "cancel_sell_offer"),),
+            (offer.seller, name, tld),
+        );
     }
 
     pub fn get_sell_offer(env: Env, name: Bytes, tld: Bytes) -> Offer {
@@ -182,7 +193,10 @@ impl Registry {
             .instance()
             .remove(&DataKey::Offer(name.clone(), tld.clone()));
 
-        env.events().publish((Symbol::new(&env, "buy_name"),), (buyer, name, tld, offer.price));
+        env.events().publish(
+            (Symbol::new(&env, "buy_name"),),
+            (buyer, name, tld, offer.price),
+        );
     }
 }
 mod test;
