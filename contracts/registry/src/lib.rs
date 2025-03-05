@@ -4,7 +4,6 @@ mod types;
 mod utils;
 use crate::errors::*;
 use crate::utils::*;
-use soroban_sdk::FromVal;
 use soroban_sdk::{
     contract, contractimpl, panic_with_error, symbol_short, token, Address, Bytes, Env, Symbol, Vec,
 };

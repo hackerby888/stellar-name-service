@@ -2,7 +2,7 @@
 
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger},
+    testutils::{Address as _, Events, Ledger},
     vec, Env,
 };
 
@@ -43,6 +43,12 @@ fn test_basic_funtional() {
     assert_eq!(is_registered, false);
 
     client.register_name(&name, &com_tld, &owner, &1);
+
+    let all_events = env.events().all();
+    // assert_eq!(all_events, vec![&env, (
+    //     contract_id,
+        
+    // )]);
 
     let is_registered = client.is_name_registered(&name, &com_tld);
     assert_eq!(is_registered, true);
