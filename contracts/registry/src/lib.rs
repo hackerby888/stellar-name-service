@@ -186,7 +186,13 @@ impl Registry {
             &offer.seller,
             &offer.price.into(),
         );
-        Self::transfer(env.clone(), name.clone(), tld.clone(), buyer.clone());
+     
+        // Transfer the domain to the buyer
+        let mut domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
+        domain.owner = buyer.clone();
+        env.storage()
+            .instance()
+            .set(&DataKey::Name(name.clone(), tld.clone()), &domain);
 
         env.storage()
             .instance()
