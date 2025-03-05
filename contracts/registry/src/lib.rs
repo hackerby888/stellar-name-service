@@ -4,12 +4,14 @@ mod types;
 mod utils;
 use crate::errors::*;
 use crate::utils::*;
+use soroban_sdk::BytesN;
 use soroban_sdk::{
     contract, contractimpl, panic_with_error, symbol_short, token, Address, Bytes, Env, Symbol, Vec,
 };
 use types::*;
 
 const ONE_YEAR_IN_SECONDS: u64 = 365 * 24 * 60 * 60;
+const ADMIN: Symbol = symbol_short!("admin");
 const RESOLVER: Symbol = symbol_short!("resolver");
 const ASSET: Symbol = symbol_short!("asset");
 const TLDS: Symbol = symbol_short!("tlds");
@@ -20,8 +22,9 @@ pub struct Registry;
 
 #[contractimpl]
 impl Registry {
-    pub fn __constructor(env: Env, asset: Address, tlds: Vec<Bytes>) {
+    pub fn __constructor(env: Env, admin: Address, asset: Address, tlds: Vec<Bytes>) {
         env.extend_me();
+        env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&ASSET, &asset);
         env.storage().instance().set(&TLDS, &tlds);
     }
@@ -186,7 +189,7 @@ impl Registry {
             &offer.seller,
             &offer.price.into(),
         );
-     
+
         // Transfer the domain to the buyer
         let mut domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
         domain.owner = buyer.clone();
@@ -202,6 +205,13 @@ impl Registry {
             (Symbol::new(&env, "buy_name"),),
             (buyer, name, tld, offer.price),
         );
+    }
+
+    pub fn upgrade(e: Env, new_wasm_hash: BytesN<32>) {
+        let admin: Address = e.storage().instance().get(&ADMIN).unwrap();
+        admin.require_auth();
+
+        e.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 mod test;

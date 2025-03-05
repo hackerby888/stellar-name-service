@@ -41,7 +41,7 @@ fn test_basic_funtional() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -94,7 +94,7 @@ fn test_make_sell_offer() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -155,7 +155,7 @@ fn test_cancel_sell_offer() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -196,7 +196,7 @@ fn test_check_sub_domain() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -229,7 +229,7 @@ fn test_name_invalid_because_uppercase() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -252,7 +252,7 @@ fn test_name_invalid_because_not_ascii_alphabetic() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -275,7 +275,7 @@ fn test_name_invalid_because_too_short() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -298,7 +298,7 @@ fn test_name_invalid_because_too_long() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -320,7 +320,7 @@ fn test_transfer_owner_ship() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -351,7 +351,7 @@ fn test_register_unsupported_tld() {
     let net_tld = Bytes::from_slice(&env, "net".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -371,7 +371,7 @@ fn test_get_owner_from_unregistered_name() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
     let name = Bytes::from_slice(&env, "test".as_bytes());
@@ -389,7 +389,7 @@ fn test_name_should_be_expired() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
@@ -416,7 +416,7 @@ fn test_register_name_that_expired() {
     let com_tld = Bytes::from_slice(&env, "com".as_bytes());
     let contract_id = env.register(
         Registry,
-        (&token_admin.address, vec![&env, com_tld.clone()]),
+        (&admin, &token_admin.address, vec![&env, com_tld.clone()]),
     );
     let client = RegistryClient::new(&env, &contract_id);
 
