@@ -8,8 +8,9 @@ pub enum Error {
     NameNotRegistered = 2,
     NameInvalid = 3,
     NameExpired = 4,
-    NameHasNoResolveData = 5,
+    NameHasNoRecord = 5,
     ResolverAlreadySet = 6,
     TLDNotSupported = 7,
     NoOffer = 8,
+    RecordTypeInvalid = 9,
 }

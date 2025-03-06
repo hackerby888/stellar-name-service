@@ -73,7 +73,7 @@ fn test_basic_funtional() {
     assert_eq!(is_registered, true);
 
     assert_eq!(client.get_owner(&name, &com_tld), owner);
-    assert_eq!(client.get_resolver(), resolver);
+    assert_eq!(client.get_name_resolver(&name, &com_tld), resolver);
     assert_eq!(client.is_name_expired(&name, &com_tld), false);
     assert_eq!(
         token.balance(&owner),

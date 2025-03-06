@@ -29,14 +29,14 @@ impl Resolver {
         env.storage().instance().set(&REGISTRY, &registry);
     }
 
-    pub fn is_name_has_resolve_data(env: Env, name: Bytes, tld: Bytes) -> bool {
+    pub fn is_name_has_record(env: Env, name: Bytes, tld: Bytes) -> bool {
         env.extend_me();
         env.storage()
             .instance()
-            .has(&DataKey::Name(name.clone(), tld.clone()))
+            .has(&RecordKeys::Name(name.clone(), tld.clone()))
     }
 
-    pub fn set_resolve_data(env: Env, name: Bytes, tld: Bytes, address: Address) {
+    pub fn set_record(env: Env, name: Bytes, tld: Bytes, record_type: Bytes, data: Bytes) {
         env.extend_me();
         name.validate_name(&env, true);
         let client = registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
@@ -46,14 +46,24 @@ impl Resolver {
         let owner = client.get_owner(&name, &tld);
         owner.require_auth();
 
+        let mut record = Record::NullRecord;
+        if record_type == Bytes::from_slice(&env, "name".as_bytes()) {
+            record = Record::Name(Address::from_string_bytes(&data));
+        } else if record_type == Bytes::from_slice(&env, "ipfs".as_bytes()) {
+            record = Record::Ipfs(data.clone());
+        } else if record_type == Bytes::from_slice(&env, "text".as_bytes()) {
+            record = Record::Text(data.clone());
+        } else {
+            panic_with_error!(&env, Error::RecordTypeInvalid);
+        }
         env.storage()
             .instance()
-            .set(&DataKey::Name(name.clone(), tld.clone()), &address);
+            .set(&RecordKeys::Name(name.clone(), tld.clone()), &record);
     }
 
-    pub fn resolve_name(env: Env, name: Bytes, tld: Bytes) -> Address {
+    pub fn resolve_name(env: Env, name: Bytes, tld: Bytes) -> Record {
         env.extend_me();
-        if Self::is_name_has_resolve_data(env.clone(), name.clone(), tld.clone()) {
+        if Self::is_name_has_record(env.clone(), name.clone(), tld.clone()) {
             let client =
                 registry::Client::new(&env, &env.storage().instance().get(&REGISTRY).unwrap());
             if client.is_name_expired(&name, &tld) {
@@ -62,10 +72,10 @@ impl Resolver {
             return env
                 .storage()
                 .instance()
-                .get(&DataKey::Name(name.clone(), tld.clone()))
+                .get(&RecordKeys::Name(name.clone(), tld.clone()))
                 .unwrap();
         } else {
-            panic_with_error!(&env, Error::NameHasNoResolveData);
+            panic_with_error!(&env, Error::NameHasNoRecord);
         }
     }
 

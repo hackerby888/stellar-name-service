@@ -49,6 +49,7 @@ impl BytesValidator for Bytes {
             }
         }
     }
+
 }
 
 pub trait Base {

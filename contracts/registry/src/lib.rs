@@ -99,18 +99,22 @@ impl Registry {
             .unwrap()
     }
 
-    pub fn get_resolver(env: Env) -> Address {
+    pub fn get_current_contract_resolver(env: Env) -> Address {
         env.extend_me();
         env.storage().instance().get(&RESOLVER).unwrap()
     }
 
+    pub fn get_name_resolver(env: Env, name: Bytes, tld: Bytes) -> Address {
+        env.extend_me();
+        let domain: Domain = Self::get_name(env.clone(), name.clone(), tld.clone());
+        return domain.resolver;
+    }
+
     pub fn set_resolver(env: Env, resolver: Address) {
         env.extend_me();
-        if !env.storage().instance().has(&RESOLVER) {
-            env.storage().instance().set(&RESOLVER, &resolver);
-        } else {
-            panic_with_error!(&env, Error::ResolverAlreadySet);
-        }
+        let admin: Address = env.storage().instance().get(&ADMIN).unwrap();
+        admin.require_auth();
+        env.storage().instance().set(&RESOLVER, &resolver);
     }
 
     pub fn get_owner(env: Env, name: Bytes, tld: Bytes) -> Address {
